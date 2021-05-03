@@ -3,11 +3,6 @@
 */
 
 /**
- *Submitted for verification at BscScan.com on 2021-03-01
-*/
-
-/**
-
    #BEE
 
    #LIQ+#RFI+#SHIB+#DOGE = #BEE
@@ -17,14 +12,11 @@
    2% fee auto distribute to all holders
    I created a black hole so #Bee token will deflate itself in supply with every transaction
    50% Supply is burned at start.
-
-
  */
 
 pragma solidity ^0.6.12;
 // SPDX-License-Identifier: Unlicensed
 interface IERC20 {
-
     function totalSupply() external view returns (uint256);
 
     /**
@@ -696,8 +688,6 @@ interface IUniswapV2Router01 {
     function getAmountsIn(uint amountOut, address[] calldata path) external view returns (uint[] memory amounts);
 }
 
-
-
 // pragma solidity >=0.6.2;
 
 interface IUniswapV2Router02 is IUniswapV2Router01 {
@@ -743,7 +733,6 @@ interface IUniswapV2Router02 is IUniswapV2Router01 {
         uint deadline
     ) external;
 }
-
 
 contract SafeMoon is Context, IERC20, Ownable {
     using SafeMath for uint256;
@@ -912,7 +901,10 @@ contract SafeMoon is Context, IERC20, Ownable {
 
     function includeInReward(address account) external onlyOwner() {
         require(_isExcluded[account], "Account is already excluded");
-        for (uint256 i = 0; i < _excluded.length; i++) {
+
+        uint256 totalExcluded = _excluded.length;
+
+        for (uint256 i = 0; i < totalExcluded; i++) {
             if (_excluded[i] == account) {
                 _excluded[i] = _excluded[_excluded.length - 1];
                 _tOwned[account] = 0;
@@ -998,21 +990,34 @@ contract SafeMoon is Context, IERC20, Ownable {
     function _getCurrentSupply() private view returns (uint256, uint256) {
         uint256 rSupply = _rTotal;
         uint256 tSupply = _tTotal;
-        for (uint256 i = 0; i < _excluded.length; i++) {
-            if (_rOwned[_excluded[i]] > rSupply || _tOwned[_excluded[i]] > tSupply) return (_rTotal, _tTotal);
+
+        uint256 totalExcluded = _excluded.length;
+
+        for (uint256 i = 0; i < totalExcluded; i++) {
+            if (_rOwned[_excluded[i]] > rSupply || _tOwned[_excluded[i]] > tSupply) {
+                return (_rTotal, _tTotal);
+            }
+
             rSupply = rSupply.sub(_rOwned[_excluded[i]]);
             tSupply = tSupply.sub(_tOwned[_excluded[i]]);
         }
-        if (rSupply < _rTotal.div(_tTotal)) return (_rTotal, _tTotal);
+
+        if (rSupply < _rTotal.div(_tTotal)) {
+            return (_rTotal, _tTotal);
+        }
+
         return (rSupply, tSupply);
     }
 
     function _takeLiquidity(uint256 tLiquidity) private {
         uint256 currentRate = _getRate();
         uint256 rLiquidity = tLiquidity.mul(currentRate);
+
         _rOwned[address(this)] = _rOwned[address(this)].add(rLiquidity);
-        if (_isExcluded[address(this)])
+
+        if (_isExcluded[address(this)]) {
             _tOwned[address(this)] = _tOwned[address(this)].add(tLiquidity);
+        }
     }
 
     function calculateTaxFee(uint256 _amount) private view returns (uint256) {
@@ -1028,7 +1033,9 @@ contract SafeMoon is Context, IERC20, Ownable {
     }
 
     function removeAllFee() private {
-        if (_taxFee == 0 && _liquidityFee == 0) return;
+        if (_taxFee == 0 && _liquidityFee == 0) {
+            return;
+        }
 
         _previousTaxFee = _taxFee;
         _previousLiquidityFee = _liquidityFee;
@@ -1062,6 +1069,7 @@ contract SafeMoon is Context, IERC20, Ownable {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
+
         if (from != owner() && to != owner()) {
             require(amount <= _maxTxAmount, "Transfer amount exceeds the maxTxAmount.");
         }
@@ -1118,14 +1126,14 @@ contract SafeMoon is Context, IERC20, Ownable {
         // how much BNB did we just swap into?
         uint256 newBalance = address(this).balance.sub(initialBalance);
 
-        // add liquidity to uniswap
+        // add liquidity to pancakeswap
         addLiquidity(otherHalf, newBalance);
 
         emit SwapAndLiquify(half, newBalance, otherHalf);
     }
 
     function swapTokensForEth(uint256 tokenAmount) private {
-        // generate the uniswap pair path of token -> weth
+        // generate the pancakeswap pair path of token -> weth
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = uniswapV2Router.WETH();
